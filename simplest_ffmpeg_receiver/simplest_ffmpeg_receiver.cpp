@@ -60,7 +60,8 @@ int main(int argc, char* argv[])
 	//in_filename  = "rtp://233.233.233.233:6666";
 	//out_filename = "receive.ts";
 	//out_filename = "receive.mkv";
-	out_filename = "receive.flv";
+	//out_filename = "receive.flv";
+	out_filename = "receive.mp4";
 
 	av_register_all();
 	//Network
@@ -74,6 +75,9 @@ int main(int argc, char* argv[])
 		printf( "Failed to retrieve input stream information");
 		goto end;
 	}
+
+	int64_t pts[2] = { 0 };
+	int64_t dts[2] = { 0 };
 
 	for(i=0; i<ifmt_ctx->nb_streams; i++) 
 		if(ifmt_ctx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO){
@@ -145,6 +149,17 @@ int main(int argc, char* argv[])
 		//Convert PTS/DTS
 		pkt.pts = av_rescale_q_rnd(pkt.pts, in_stream->time_base, out_stream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 		pkt.dts = av_rescale_q_rnd(pkt.dts, in_stream->time_base, out_stream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+		
+		//重新计数pts和dts，解决录制的mp4文件在VLC中播放时无法拖动进度的问题。
+		//此问题的根源在于MP4文件中的elst BOX多了一条记录。
+		if (pts[pkt.stream_index] == 0) {
+			pts[pkt.stream_index] = pkt.pts;
+			dts[pkt.stream_index] = pkt.dts;
+		}
+
+		pkt.pts -= pts[pkt.stream_index];
+		pkt.dts -= dts[pkt.stream_index];
+
 		pkt.duration = av_rescale_q(pkt.duration, in_stream->time_base, out_stream->time_base);
 		pkt.pos = -1;
 		//Print to Screen
