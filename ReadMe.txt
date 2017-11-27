@@ -1,4 +1,9 @@
-﻿最简单的基于FFmpeg的推流器（推送RTMP）
+﻿纪念雷神
+
+本fork，解决录制MP4文件时，录制出的mp4文件在vlc等播放器下，视频进度无法seek，究其原因，在于elts box多了条记录。将dts，pts处理为相对时间，问题解决。
+
+
+最简单的基于FFmpeg的推流器（推送RTMP）
 Simplest FFmpeg Streamer (Send RTMP)
 
 雷霄骅 Lei Xiaohua
